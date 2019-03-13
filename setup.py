@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='bcl2fq-local',
-    version='0.1.0',
+    version='0.1.1',
     url='https://github.com/seahurt/bcl2fq-local',
     license='MIT',
     author='Wang Jianghao',

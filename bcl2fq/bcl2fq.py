@@ -52,14 +52,13 @@ def gen_mask(reads):
 
 
 def gen_commmand():
-    template = '{bin} -r {read_process_num} -d {demulti_process_num} -p {parse_process_num} -w {write_process_num} ' + \
+    template = '{bin} -r {read_process_num} -p {parse_process_num} -w {write_process_num} ' + \
         '--barcode-mismatches {mismatch} --no-lane-splitting -R {seq_dir} --output-dir {out_dir} ' + \
         '--use-bases-mask {mask} --sample-sheet {sample_sheet_path}'
 
     return template.format(read_process_num=settings['ioprocess'],
                            parse_process_num=settings['process'],
                            write_process_num=settings['ioprocess'],
-                           demulti_process_num=settings['process'],
                            mismatch=settings['mismatch'],
                            seq_dir=settings['seq_dir'],
                            out_dir=settings['out_dir'],
@@ -88,9 +87,14 @@ def run_bcl2fq(cmd):
                            stderr=subprocess.STDOUT,
                            encoding='utf-8',
                            shell=True)
-    for line in res.stdout.read():
-        print(line)
-    return res.returncode
+    while True:
+        output = res.stdout.readline()
+        if output == '' and res.poll():
+            break
+        if output:
+            print(output.strip())
+    return_code = res.poll()
+    return return_code
 
 
 def parse_args():
