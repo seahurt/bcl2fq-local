@@ -73,11 +73,17 @@ def wait_sequence_finish():
         time.sleep(60)
 
 
+def check_sample_sheet_existence():
+    if not os.path.exists(settings['sample_sheet']):
+        sys.exit('{path} not found!'.format(path=settings['sample_sheet']))
+
+
 def run_bcl2fq(cmd):
+    check_sample_sheet_existence()
     wait_sequence_finish()
     res = subprocess.Popen(cmd,
                            stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
                            encoding='utf-8',
                            shell=True)
     for line in res.stdout.read():
@@ -86,18 +92,32 @@ def run_bcl2fq(cmd):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', help='Sequence run dir', required=True)
-    parser.add_argument('-o', help='Output dir for fastq files', required=True)
-    parser.add_argument('--sample-sheet', dest='sample_sheet', help='Using custom sample sheet file')
-    parser.add_argument('--mismatch', type=int, default=1, help='Mismatch for barcode, default: 1')
-    parser.add_argument('--process', type=int, default=24, help='Process number for demultiplexing and processing')
-    parser.add_argument('--io-process', type=int, dest='ioprocess', default=4,
+    help = ''' bcl2fq-local -i <seq_dir> -o <ou_dir>
+    
+optional arguments:
+    --sample-sheet Path  Using custom sample sheet file
+    --mismatch N         Mismatch for barcode, default: 1
+    --process N          Process number for demultiplexing and processing
+    --io-process N       Process number for reading and writing
+    --binpath   Path     Bcl2fastq binary file path, default: /usr/local/bin/bcl2fastq
+    --cmd-only           Only print the cmd without running it
+    '''
+    usage = 'bcl2fq-local -i <seq_dir> -o <ou_dir> [options]'
+    parser = argparse.ArgumentParser(usage=help, add_help=False)
+    parser.add_argument('-i', metavar='DirPath', help='Sequence run dir', required=True)
+    parser.add_argument('-o', metavar='DirPath', help='Output dir for fastq files', required=True)
+    parser.add_argument('--sample-sheet', dest='sample_sheet', metavar='File', help='Using custom sample sheet file')
+    parser.add_argument('--mismatch', metavar='Num', type=int, default=1, help='Mismatch for barcode, default: 1')
+    parser.add_argument('--process', metavar='Num', type=int, default=24, help='Process number for demultiplexing and processing')
+    parser.add_argument('--io-process', metavar='Num', type=int, dest='ioprocess', default=4,
                         help='Process number for reading and writing')
-    parser.add_argument('--binpath', default='/usr/local/bin/bcl2fastq', help='bcl2fastq binary file path')
-    parser.add_argument('--cmd-only', dest='debug', action='store_true', default=False,
-                        help='Only print the cmd with out running it')
-    args = parser.parse_args()
+    parser.add_argument('--binpath', metavar='File', help='bcl2fastq binary file path')
+    parser.add_argument('--cmd-only', dest='cmd_only', action='store_true', default=False,
+                        help='Only print the cmd without running it')
+    args = parser.parse_args(sys.argv[1:])
+    # if not (args.i and args.o):
+    #     parser.print_help()
+    #     sys.exit()
     settings['seq_dir'] = os.path.abspath(args.i)
     settings['out_dir'] = os.path.abspath(args.o)
     settings['sample_sheet'] = args.sample_sheet if args.sample_sheet else os.path.join(settings['seq_dir'],
@@ -106,7 +126,7 @@ def parse_args():
     settings['process'] = args.process
     settings['ioprocess'] = args.ioprocess
     bcl2fastq_sys_path = os.popen('which bcl2fastq').read().strip()
-    if os.path.exists(args.binpath):
+    if args.binpath and os.path.exists(args.binpath):
         settings['binpath'] = args.binpath
     elif os.path.exists('/usr/bin/bcl2fastq'):
         settings['binpath'] = '/usr/bin/bcl2fastq'
@@ -114,7 +134,7 @@ def parse_args():
         settings['binpath'] = bcl2fastq_sys_path
     else:
         sys.exit('bcl2fastq path not found, please specify the dir!')
-    settings['debug'] = args.debug
+    settings['cmd_only'] = args.cmd_only
 
 
 def main():
@@ -122,7 +142,7 @@ def main():
     gen_conf()
     cmd = gen_commmand()
     print(cmd)
-    if not settings['debug']:
+    if not settings['cmd_only']:
         run_bcl2fq(cmd)
 
 
