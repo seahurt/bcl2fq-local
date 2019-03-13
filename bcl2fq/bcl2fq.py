@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 """
-    Usage: bcl2fq -i <input dir> -o <output dir>
-            [--sample-sheet <sample sheet path, default: input_dir/SampleSheet.csv>]
-            [--mismatch <mismatch num, default: 1>]
-            [--process <process num, default:24>]
-            [--io-process <process num for io, default:4>]
-            [--binpath <bcl2fastq bin path, default: /usr/local/bin/bcl2fastq>]
-            [--cmd-only]
+usage:  bcl2fq-local -i <seq_dir> -o <ou_dir>
+
+optional arguments:
+    --sample-sheet Path  Using custom sample sheet file
+    --mismatch N         Mismatch for barcode, default: 1
+    --process N          Process number for demultiplexing and processing
+    --io-process N       Process number for reading and writing
+    --binpath   Path     Bcl2fastq binary file path, default: /usr/local/bin/bcl2fastq
+    --cmd-only           Only print the cmd without running it
 """
 import xmltodict
 import subprocess
