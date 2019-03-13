@@ -11,7 +11,7 @@ optional arguments:
     --mismatch N         Mismatch for barcode, default: 1
     --process N          Process number for demultiplexing and processing
     --io-process N       Process number for reading and writing
-    --binpath   Path     Bcl2fastq binary file path, default: /usr/local/bin/bcl2fastq
+    --binpath   Path     Bcl2fastq binary file path
     --cmd-only           Only print the cmd without running it
 ```
 

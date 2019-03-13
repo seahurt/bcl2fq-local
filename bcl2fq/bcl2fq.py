@@ -7,7 +7,7 @@ optional arguments:
     --mismatch N         Mismatch for barcode, default: 1
     --process N          Process number for demultiplexing and processing
     --io-process N       Process number for reading and writing
-    --binpath   Path     Bcl2fastq binary file path, default: /usr/local/bin/bcl2fastq
+    --binpath   Path     Bcl2fastq binary file path
     --cmd-only           Only print the cmd without running it
 """
 import xmltodict
@@ -16,14 +16,15 @@ import argparse
 import os
 import sys
 import time
+import shutil
 # import json
 
 
 settings = {}
 
 
-def parse_params(xmlfile):
-    with open(xmlfile) as f:
+def parse_params(xml_file):
+    with open(xml_file) as f:
         contents = f.read()
     try:
         params = xmltodict.parse(contents)
@@ -79,6 +80,15 @@ def check_sample_sheet_existence():
         sys.exit('{path} not found!'.format(path=settings['sample_sheet']))
 
 
+def move_undetermined_files():
+    dest_dir = os.path.join(settings['out_dir'], 'UndeterminedReads')
+    if os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
+    os.mkdir(dest_dir)
+    shutil.move(os.path.join(settings['out_dir'], 'Undetermined_S0_R1_001.fastq.gz'), dest_dir)
+    shutil.move(os.path.join(settings['out_dir'], 'Undetermined_S0_R2_001.fastq.gz'), dest_dir)
+
+
 def run_bcl2fq(cmd):
     check_sample_sheet_existence()
     wait_sequence_finish()
@@ -89,7 +99,7 @@ def run_bcl2fq(cmd):
                            shell=True)
     while True:
         output = res.stdout.readline()
-        if output == '' and res.poll():
+        if res.poll() is not None:
             break
         if output:
             print(output.strip())
@@ -98,32 +108,30 @@ def run_bcl2fq(cmd):
 
 
 def parse_args():
-    help = ''' bcl2fq-local -i <seq_dir> -o <ou_dir>
+    usage = ''' bcl2fq-local -i <seq_dir> -o <ou_dir>
     
 optional arguments:
     --sample-sheet Path  Using custom sample sheet file
     --mismatch N         Mismatch for barcode, default: 1
     --process N          Process number for demultiplexing and processing
     --io-process N       Process number for reading and writing
-    --binpath   Path     Bcl2fastq binary file path, default: /usr/local/bin/bcl2fastq
+    --binpath   Path     Bcl2fastq binary file path
     --cmd-only           Only print the cmd without running it
     '''
-    usage = 'bcl2fq-local -i <seq_dir> -o <ou_dir> [options]'
-    parser = argparse.ArgumentParser(usage=help, add_help=False)
+    parser = argparse.ArgumentParser(usage=usage, add_help=False)
     parser.add_argument('-i', metavar='DirPath', help='Sequence run dir', required=True)
     parser.add_argument('-o', metavar='DirPath', help='Output dir for fastq files', required=True)
     parser.add_argument('--sample-sheet', dest='sample_sheet', metavar='File', help='Using custom sample sheet file')
     parser.add_argument('--mismatch', metavar='Num', type=int, default=1, help='Mismatch for barcode, default: 1')
-    parser.add_argument('--process', metavar='Num', type=int, default=24, help='Process number for demultiplexing and processing')
+    parser.add_argument('--process', metavar='Num', type=int, default=24,
+                        help='Process number for demultiplexing and processing')
     parser.add_argument('--io-process', metavar='Num', type=int, dest='ioprocess', default=4,
                         help='Process number for reading and writing')
     parser.add_argument('--binpath', metavar='File', help='bcl2fastq binary file path')
     parser.add_argument('--cmd-only', dest='cmd_only', action='store_true', default=False,
                         help='Only print the cmd without running it')
     args = parser.parse_args(sys.argv[1:])
-    # if not (args.i and args.o):
-    #     parser.print_help()
-    #     sys.exit()
+
     settings['seq_dir'] = os.path.abspath(args.i)
     settings['out_dir'] = os.path.abspath(args.o)
     settings['sample_sheet'] = args.sample_sheet if args.sample_sheet else os.path.join(settings['seq_dir'],
@@ -150,6 +158,7 @@ def main():
     print(cmd)
     if not settings['cmd_only']:
         run_bcl2fq(cmd)
+        move_undetermined_files()
 
 
 if __name__ == '__main__':

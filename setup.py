@@ -5,11 +5,11 @@ with open("README.md", "r") as fh:
 
 setup(
     name='bcl2fq-local',
-    version='0.1.1',
+    version='0.1.2',
     url='https://github.com/seahurt/bcl2fq-local',
     license='MIT',
     author='Wang Jianghao',
-    author_email='wangjianghao@matridx.com',
+    author_email='haozi.vv@gmail.com',
     description='Bcl2fastq wrapper',
     long_description=long_description,
     long_description_content_type="text/markdown",
