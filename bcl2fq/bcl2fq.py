@@ -4,6 +4,7 @@
             [--sample-sheet <sample sheet path, default: input_dir/SampleSheet.csv>]
             [--mismatch <mismatch num, default: 1>]
             [--process <process num, default:24>]
+            [--io-process <process num for io, default:4>]
             [--binpath <bcl2fastq bin path, default: /usr/local/bin/bcl2fastq>]
             [--cmd-only]
 """
@@ -12,6 +13,7 @@ import subprocess
 import argparse
 import os
 import sys
+import time
 # import json
 
 
@@ -65,7 +67,14 @@ def gen_commmand():
                            )
 
 
+def wait_sequence_finish():
+    while not os.path.exists(os.path.join(settings['seq_dir'], 'RTAComplete.txt')):
+        print('Sequence not finished! Wait for finishing...')
+        time.sleep(60)
+
+
 def run_bcl2fq(cmd):
+    wait_sequence_finish()
     res = subprocess.Popen(cmd,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE,
